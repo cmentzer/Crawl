@@ -1,8 +1,0 @@
-# Dungeon Crawl Stone Soup 0.14.0 macro file
-# WARNING: This file is entirely auto-generated.
-
-# Key Mappings:
-# Command Macros:
-M:\{-282}
-A:===test_hit_closest
-
