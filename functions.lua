@@ -145,7 +145,12 @@ function getAction(gameState)
 	return action
 end
 
-function maxValue(gameState, depth, agentIndex)
+function getScoreForAction(action, gameState) 
+	globalDepth = 5 -- can mess with this
+	return minValue(generateSuccessor(0, action), 0, 1, action)
+end
+
+function maxValue(gameState, depth, agentIndex, action)
 	if isWinState(gameState) or isLoseState(gameState) or depth == globalDepth then
 		return scoreGameState(gameState)
 	end
@@ -160,7 +165,7 @@ function maxValue(gameState, depth, agentIndex)
 	return v
 end
 
-function minValue(gameState, depth, agentIndex)
+function minValue(gameState, depth, agentIndex, action)
 	if isWinState(gameState) or isLoseState(gameState) or depth == globalDepth then
 		return scoreGameState(gameState)
 	end
@@ -195,6 +200,6 @@ function getLegalActions(gameState)
 	--undefined
 end
 
-function getScoreForAction(action, gameState) 
-	--undefined
+function generateSuccessor(agentIndex, action)
+	-- undefined
 end
