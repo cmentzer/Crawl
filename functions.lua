@@ -1,3 +1,6 @@
+function test()
+	crawl.mpr("testing")
+
 local function populate_item_list(x, y)
   floor_items = items.get_items_at(x, y)
   if not floor_items then
@@ -115,4 +118,83 @@ function get_game_state()
 	crawl.mpr("and " .. table.getn(item_list) .. " items on the floor ... \n")
 	crawl.mpr(" ... the current value attributed to this game state is: " .. "10 \n")
 
+end
+
+function getAction(gameState)
+	local actionScores = {}
+	local currentScore = 0
+	for action in getLegalActions(gameState) do
+		currentScore = getScoreForAction(action, gameState)
+		table.insert(actionScores, {action, currentScore})
+	end
+
+	crawl.mpr("score table is " )
+	for k,v in actionScores do
+		crawl.mpr(k)
+		crawl.mpr(v)
+
+	local maxScore = 0
+	local action = ""
+	for k,v in actionScores do
+		if v > maxScore then
+			maxScore = v
+			action = k
+		end
+	end
+	crawl.mpr("returning action " .. action .. " with value " .. maxScore)
+	return action
+end
+
+function maxValue(gameState, depth, agentIndex)
+	if isWinState(gameState) or isLoseState(gameState) or depth == globalDepth then
+		return scoreGameState(gameState)
+	end
+
+	local v = -100000
+	local potential = 0
+	for action in getLegalActions(gameState) do
+		potential = minValue(generateSuccessor(gameState, agentIndex, action), depth, agentIndex + 1)
+		if v < potential then
+			v = potential
+		end
+	return v
+end
+
+function minValue(gameState, depth, agentIndex)
+	if isWinState(gameState) or isLoseState(gameState) or depth == globalDepth then
+		return scoreGameState(gameState)
+	end
+
+	local v = 100000
+	local potential = 0
+	for action in getLegalActions(gameState) do
+		if agentIndex == gameStateMaxAgent - 1 then
+			potential = maxValue(generateSuccessor(gameState, agentIndex, action), depth + 1, 0)
+		else
+			potential = maxValue(generateSuccessor(gameState, agentIndex, action), depth, agentIndex + 1)
+		end
+		if v < potential then
+			v = potential
+		end
+	return v
+end
+
+function scoreGameState(gameState)
+	-- TODO: DEFINE THIS. Cannot run without this being filled out.
+end
+
+function isWinState(gameState)
+	-- undefined, probably forever
+end
+
+function isLoseState(gameState)
+	-- undefined, probably forever
+end
+
+function getLegalActions(gameState)
+	--undefined
+end
+
+function getScoreForAction(action, gameState) 
+	--undefined
 end
