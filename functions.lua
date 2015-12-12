@@ -221,7 +221,16 @@ function scoreGameState(gameState)
 	-- then, compute the score we get from the locations of monsters on the screen
 	local function getMonsterScore(monster_list)
 		-- undefined, for now just return number of monsters in the list
-		return table.getn(monster_list)
+		playerPos = gameState[6][1][1]
+		playerX = playerPos[1]
+		playerY = playerPos[2]
+		local score = 0
+		for monster in monster_list do
+			local monsterX = monster[2]
+			local monsterY = monster[3]
+			score = score + manhattanDistance(playerX, playerY, monsterX, monsterY)
+		end
+		return 0 - score
 	end
 
 	-- then, computer score from water. Like walls and lava, standing NEXT TO water is good, 
@@ -290,6 +299,7 @@ function scoreGameState(gameState)
 	local monsterScore = getMonsterScore(gameState[2])
 	local waterScore = getWaterScore(gameState[3])
 	local lavaScore = getLavaScore(gameState[4])
+	-- TODO: consider health, player and monster if possible
 	return wallScore + monsterScore + lavaScore + waterScore
 end
 
