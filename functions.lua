@@ -225,7 +225,7 @@ function scoreGameState(gameState)
 		playerX = playerPos[1]
 		playerY = playerPos[2]
 		local score = 0
-		for monster in monster_list do
+		for key, monster in pairs(monster_list) do
 			local monsterX = monster[2]
 			local monsterY = monster[3]
 			score = score + manhattanDistance(playerX, playerY, monsterX, monsterY)
@@ -394,40 +394,45 @@ function getLegalActions(agentIndex, gameState)
 end
 
 function generateSuccessor(gameState, agentIndex, action)
-	crawl.mpr("generating successor game state ...")
-	local wall_list = gameState[1]
-	local monster_list = gameState[2]
-	local water_list = gameState[3]
-	local lava_list = gameState[4]
-	local item_list = gameState[5]
-	local agent_list = gameState[6]
+	local agent = gameState[6][agentIndex]
+	local agentX = agent[1][1]
+	local agentY  = agent[1][2]
+	local newX = 0
+	local newY = 0
 
-	-- list of visible monsters
-	local playerPos = agent_list[1][1]
-	local playerX = playerPos[1]  -- THESE ARE NOT UPDATED AFTER THE ACTION. FIX THAT.
-	local playerY = playerPos[2]
-	local new_monster_list = {}
-	for monster in monster_list do
-		local monsterX = monster[2]
-		local monstery = monster[3]
-		local newX = 0
-		local newY = 0
-		local mDistance = manhattanDistance(playerX, playerY, monsterX, monsterY)
-		for x=-1,1 do
-			for y=-1,1 do
-				local newMonsterX = monsterX + x
-				local newMonsterY = monsterY + y
-				local newMDistance = manhattanDistance(newMonsterX, newMonsterY, playerX, playerY)
-				if newMDistance < mDistance then
-					newX = newMonsterX
-					newY = newMonsterY
-				end
-			end
-		end
-		table.insert(new_monster_list, {monster[1], newX, newY})
+	if action == "y" then
+		newX = agentX - 1
+		newY = agentY - 1
+	elseif action == "h" then 
+		newX = agentX - 1
+		newY = agentY
+	elseif action == "b" then
+		newX = agentX - 1
+		newY = agentY + 1
+	elseif action == "j" then 
+		newX = agentX
+		newY = agentY + 1
+	elseif action == "k" then
+		newX = agentX
+		newY = agentY - 1
+	elseif action == "u" then
+		newX = agentX + 1
+		newY = agentY + 1
+	elseif action == "l" then
+		newX = agentX + 1
+		newY = agentY
+	elseif action == "n" then
+		newX = agentX + 1
+		newY = agentY - 1
+	else
+		crawl.mpr("Invalid key passed in as action to generateSuccessor")
+		return "invalid key"
 	end
-	
-	local newGameState = {wall_list, new_monster_list, water_list, lava_list, item_list, agent_list}
+
+	local newAgentList = gameState[6]
+	newAgentList[agentIndex] = {{newX, newY}, gameState[6][agentIndex][2]}
+
+	local newGameState = {gameState[1], gameState[2], gameState[3], gameState[4], gameState[5], newAgentList}
 	return newGameState
 
 end
