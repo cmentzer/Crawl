@@ -384,10 +384,43 @@ function getLegalActions(agentIndex, gameState)
 	return legalMoves
 end
 
-function generateSuccessor(agentIndex, action)
-	-- undefined
+function generateSuccessor(gameState, agentIndex, action)
+	crawl.mpr("generating successor game state ...")
+	local wall_list = gameState[1]
+	local monster_list = gameState[2]
+	local water_list = gameState[3]
+	local lava_list = gameState[4]
+	local item_list = gameState[5]
+	local agent_list = gameState[6]
+
+	-- list of visible monsters
+	local playerPos = agent_list[1][1]
+	local playerX = playerPos[1]  -- THESE ARE NOT UPDATED AFTER THE ACTION. FIX THAT.
+	local playerY = playerPos[2]
+	local new_monster_list = {}
+	for monster in monster_list do
+		monsterX = monster[2]
+		monstery = monster[3]
+		local mDistance = manhattanDistance(playerX, playerY, monsterX, monsterY)
+		for x=-1,1 do
+			for y=-1,1 do
+				local newMonsterX = monsterX + x
+				local newMonsterY = monsterY + y
+				local newMDistance = manhattanDistance(newMonsterX, newMonsterY, playerX, playerY)
+				if newMDistance < mDistance then
+					table.insert(new_monster_list, {monster[1], newMonsterX, newMonsterY})
+
+
+	
+	local gameState = {wall_list, new_monster_list, water_list, lava_list, item_list, agent_list}
+	return gameState
+
 end
 
+function manhattanDistance(x1, y1, x2, y2)
+	dX = x1 - x2
+	dY = y1 - y2
+	return math.abs(dX) + math.abs(dY)
 
 function main()
 	-- Essentially we want to split the game state into two categories:
