@@ -2,7 +2,7 @@ function test()
 	crawl.mpr("testing")
 end
 
-local function populate_item_list(x, y)
+function populate_item_list(x, y)
   floor_items = items.get_items_at(x, y)
   if not floor_items then
     return false
@@ -12,7 +12,7 @@ local function populate_item_list(x, y)
   end
 end
 
-local function find_wall(x, y)
+function find_wall(x, y)
 	local f = view.feature_at(x, y)
 	--crawl.mpr("feature at " .. x .. " " .. y .. " is " .. f .. "\n")
 	if f == "rock_wall" or
@@ -24,7 +24,7 @@ local function find_wall(x, y)
 	end
 end
 
-local function find_lava(x, y)
+function find_lava(x, y)
 	local l = view.feature_at(x, y)
 	if l == "lava" then
 		return 1
@@ -33,12 +33,12 @@ local function find_lava(x, y)
 	end
 end
 
-local function find_monster(x, y)
+function find_monster(x, y)
 	local m = monster.get_monster_at(x, y)
 	return m
 end
 
-local function find_water(x,y)
+function find_water(x,y)
 	local w = view.feature_at(x,y)
 	if w == "shallow_water" then
 		return 2
@@ -59,6 +59,8 @@ function get_game_state()
 	local water_list = {}
 	-- list of visible lava
 	local lava_list = {}
+	-- list of items
+	item_list = {}
 
 
 	-- player is a variable that holds information about the player
@@ -295,23 +297,82 @@ function isLoseState(gameState)
 end
 
 function getLegalActions(agentIndex, gameState)
-	-- for the given agentIndex and gameState, get a list of the legal
-	-- actions of that agent.
-	local agentPosn = 
-	-- starting with movement: 
+	-- movement: 
 	function getLegalMovementActions(agentIndex, gameState)
 		-- possible movement actions are one of: 
 		-- y, u, h, j, k, l, b, n. 
 		local adjTiles = {}
 		for x = -1,1 do
 			for y = -1,1 do
-				for key, value in pairs(gameState[1])
-				table.insert(adjTiles, {x,y})
-			end
-		end
+				-- if we can see that cell ...
+				if you.see_cell(x, y) then
+				-- check if that cell is a wall
+					local w = find_wall(x, y)
+					local m = find_monster(x, y)
+					local w2 = find_water(x, y)
+					local l = find_lava(x, y)
+
+					if w == 1 then -- cell has wall
+						table.insert(adjTiles, {"wall", x, y})
+					elseif m and not m:is_safe() then -- cell has monster
+						table.insert(adjTiles, {"monster", x, y})
+					elseif w2 == 2 then -- cell has shallow water
+						table.insert(adjTiles, {"shallow", x, y})
+					elseif w2 == 1 then -- cell has deep water
+						table.insert(adjTiles, {"deep", x, y})
+					elseif l == 1 then -- cell has lava
+						table.insert(adjTiles, {"lava", x, y})
+					else 
+						table.insert(adjTiles, {"floor", x, y})
+					end -- end if
+				end -- end can see
+			end -- end y loop
+		end -- end x loop
 
 
+		-- y = 1, 1  (up and left)
+		-- h = 1, 0  (left) 
+		-- b = 1, -1 (down and left)
 
+		-- j = 0, 1  (down)
+		-- k = 0, -1 (up)
+
+		-- u = -1, 1 (up and right)
+		-- l = -1, 0 (right)
+		-- n = -1, -1 (down and right)
+
+		local n = adjTiles[1][1]
+		local l = adjTiles[2][1]
+		local u = adjTiles[3][1]
+
+		local k = adjTiles[4][1]
+		local wait = adjTiles[5][1]
+		local j = adjTiles[6][1]
+
+		local b = adjTiles[7][1]
+		local h = adjTiles[8][1]
+		local y = adjTiles[9][1]
+
+		local moves = {{"y", n}, {"k", k}, {"u", b}, {"h", l}, {"l", h}, {"b", u}, {"j", j}, {"n", y}}
+		return moves
+	end
+
+	-- for the given agentIndex and gameState, get a list of the legal
+	-- actions of that agent.
+	
+	-- the position of the agent specified by the given agentIndex
+	local agentPosn = {0, 0}
+	local monster_list = gameState[2]
+	if agentIndex > 0 then
+		agentPosn = {monster_list[agentIndex][2], monster_list[agentIndex][3]}
+	end
+
+	local moves = getLegalMovementActions(0, gameState)
+	for key, value in pairs(moves) do
+		crawl.mpr(value[1])
+		crawl.mpr(" == ")
+		crawl.mpr(value[2])
+	end
 end
 
 function generateSuccessor(agentIndex, action)
@@ -336,6 +397,7 @@ function main()
 		agents = 1 + table.getn(gameState[2])
 	else 
 		inCombat = false
+		agents = 1
 	end
 	-- if we are in combat, this code will determine our actions:
 	if inCombat then
@@ -344,6 +406,7 @@ function main()
 		crawl.mpr("IN MAIN the game state is equal to " .. currentScore)
 		-- list the actions available to the player:
 		crawl.mpr("the actions available to the player are: ")
+		local moves = getLegalActions(0, gameState)
 
 	-- if we are not in combat, this code will determine our actions:
 	else
