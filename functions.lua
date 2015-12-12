@@ -465,15 +465,16 @@ function main()
 	-- if we are in combat, this code will determine our actions:
 	if inCombat then
 		crawl.mpr("in combat !!!")
-		currentScore = scoreGameState(gameState)
-		crawl.mpr("IN MAIN the game state is equal to " .. currentScore)
+--		currentScore = scoreGameState(gameState)
+--		crawl.mpr("IN MAIN the game state is equal to " .. currentScore)
 		-- list the actions available to the player:
-		crawl.mpr("the actions available to the player are: ")
-		local moves = getLegalActions(1, gameState)
-		for key, value in pairs(moves) do 
-			crawl.mpr(value)
-		end
-
+--		crawl.mpr("the actions available to the player are: ")
+--		local moves = getLegalActions(1, gameState)
+--		for key, value in pairs(moves) do 
+--			crawl.mpr(value)
+--		end
+		local toTake = getAction(gameState)
+		crawl.sendkeys(toTake)
 	-- if we are not in combat, this code will determine our actions:
 	else
 		crawl.mpr("not in combat")
