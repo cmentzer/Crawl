@@ -50,6 +50,12 @@ function get_game_state()
 		end
 	end
 
+	-- function to find permafood in our inventory
+	---function find_food(x,y)
+		---local i = 0
+		---for i = 0, 51 do
+		---	if items.inslot(i)
+
 	-- start getting the game state:
 
 	crawl.mpr("getting game state ...")
@@ -63,6 +69,8 @@ function get_game_state()
 	local lava_list = {}
 	-- list of items
 	local agents_list = {}
+	-- inventory 
+	local inventory = {}
 	item_list = {}
 
 
@@ -337,7 +345,9 @@ function getLegalActions(agentIndex, gameState)
 		-- y, u, h, j, k, l, b, n. 
 		local adjTiles = {}
 		for x = agentX - 1, agentX + 1 do
+			crawl.mpr("x is " .. x)
 			for y = agentY - 1, agentY + 1 do
+				crawl.mpr("y is " .. y)
 				-- if we can see that cell ...
 				if you.see_cell(x, y) then
 				-- check if that cell is a wall
@@ -359,8 +369,9 @@ function getLegalActions(agentIndex, gameState)
 					else 
 						table.insert(adjTiles, {"floor", x, y})
 					end -- end if
+				else 
+					table.insert(adjTiles, {"hidden", x, y})
 				end -- end can see
-				table.insert(adjTiles, {"hidden", x, y})
 			end -- end y loop
 		end -- end x loop
 
@@ -381,8 +392,9 @@ function getLegalActions(agentIndex, gameState)
 		local b = adjTiles[3][1]
 
 		local k = adjTiles[4][1]
-		--crawl.mpr("working with agent number " .. agentIndex)
-		--crawl.mpr("that agent's WAIT move is " .. adjTiles[5][1])
+
+		crawl.mpr("working with agent number " .. agentIndex)
+		crawl.mpr("that agent's WAIT move is " .. adjTiles[5][1])
 		local wait = adjTiles[5][1]
 		local j = adjTiles[6][1]
 
@@ -390,7 +402,7 @@ function getLegalActions(agentIndex, gameState)
 		local l = adjTiles[8][1]
 		local n = adjTiles[9][1]
 
-		local moves = {{"y", y}, {"k", k}, {"u", u}, {"h", h}, {"l", l}, {"b", b}, {"j", j}, {"n", n}}
+		local moves = {{"y", y}, {"h", h}, {"b", b}, {"k", k}, {"wait", wait}, {"j", j}, {"u", u}, {"l", l}, {"n", n}}
 		return moves
 	end
 
@@ -398,7 +410,9 @@ function getLegalActions(agentIndex, gameState)
 	-- actions of that agent.
 	local moves = getLegalMovementActions(agentIndex, gameState)
 	local legalMoves = {}
+	crawl.mpr("working with agent number " .. agentIndex .. " that agent's moves are .. ")
 	for key, value in pairs(moves) do
+		crawl.mpr(value[2])
 		if value[2] == "floor" or 
 			value[2] == "shallow" or 
 			value[2] == "monster" then
@@ -439,6 +453,9 @@ function generateSuccessor(gameState, agentIndex, action)
 	elseif action == "n" then
 		newX = agentX + 1
 		newY = agentY - 1
+	elseif action == "wait" then
+		newX = agentX
+		newY = agentY
 	else
 		crawl.mpr("Invalid key passed in as action to generateSuccessor")
 		return "invalid key"
@@ -489,7 +506,7 @@ function main()
 --			crawl.mpr(value)
 --		end
 		gameStateMaxAgent = table.getn(gameState[6])
-		--crawl.mpr("number of agents is" .. gameStateMaxAgent)
+		crawl.mpr("number of agents is" .. gameStateMaxAgent)
 		local toTake = getAction(1, gameState)
 		crawl.sendkeys(toTake)
 	-- if we are not in combat, this code will determine our actions:
