@@ -1,0 +1,30 @@
+Functions: 
+
+	get_game_state()
+		no arguments
+		returns game state, a
+			table of:
+				-- list of visible walls
+				-- list of visible monster
+				-- list of visible water
+				-- list of visible lava
+				-- list of visible items
+				-- list of agents
+		sub functions:
+			populate_item_list(x, y)
+				takes a position x and y, 
+				returns the item at that position, if one exists
+				(FIX ME)
+			find_wall (x,y) 
+				takes a position x and y, 
+				returns the wall at that position, if one exists
+			find_lava (x, y)
+				takes a position x and y, 
+				returns the lava at that position, if it exists
+			find_monster (x, y)
+				takes a position x and y,
+				returns the monster structure M at that position, if one exists
+			find_water (x, y)
+				takes a position x and y, 
+				returns the water at that position if it exists
+				
