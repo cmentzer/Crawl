@@ -27,4 +27,37 @@ Functions:
 			find_water (x, y)
 				takes a position x and y, 
 				returns the water at that position if it exists
-				
+
+	getAction(gameState)
+		takes a game state
+		returns the best action
+
+	getScoreForAction(action, gameState)
+		takes an action and the gamestate
+		returns the score of the state that taking the given 
+			action would place you at
+
+	maxValue
+	minValue
+
+	scoreGameState(gameState)
+	takes the game state,
+	returns a number score of that game state
+	sub functions:
+		numAdjWalls(position, wall_list)
+			given the list of walls and a position, 
+			compute the number of walls adjacent to that position
+		getMonsterScore(monster_list)
+			given the list of monsters,
+			return the score from monsters based on thier positions relative to ours
+		getWaterScore ...
+		getLavaScore ...
+
+	isWinState ...
+	isLoseState ...
+	getLegalActions ...
+		getLegalMovementActions ...
+
+	generateSuccessor ...
+	main ...
+
