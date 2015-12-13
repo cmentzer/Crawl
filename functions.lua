@@ -138,10 +138,10 @@ function get_game_state()
 
 end
 
-function getAction(gameState)
+function getAction(agentIndex, gameState)
 	local actionScores = {}
 	local currentScore = 0
-	for action in getLegalActions(gameState) do
+	for key, action in pairs(getLegalActions(agentIndex, gameState)) do
 		currentScore = getScoreForAction(action, gameState)
 		table.insert(actionScores, {action, currentScore})
 	end
@@ -165,7 +165,7 @@ end
 
 function getScoreForAction(action, gameState) 
 	globalDepth = 5 -- can mess with this
-	return minValue(generateSuccessor(0, action), 0, 1, action)
+	return minValue(generateSuccessor(gameState, 1, action), 0, 1, action)
 end
 
 function maxValue(gameState, depth, agentIndex, action)
@@ -175,7 +175,7 @@ function maxValue(gameState, depth, agentIndex, action)
 
 	local v = -100000
 	local potential = 0
-	for action in getLegalActions(gameState) do
+	for key, action in pairs(getLegalActions(agentIndex, gameState)) do
 		potential = minValue(generateSuccessor(gameState, agentIndex, action), depth, agentIndex + 1)
 		if v < potential then
 			v = potential
@@ -191,8 +191,8 @@ function minValue(gameState, depth, agentIndex, action)
 
 	local v = 100000
 	local potential = 0
-	for action in getLegalActions(gameState) do
-		if agentIndex == gameStateMaxAgent - 1 then
+	for key, action in pairs(getLegalActions(agentIndex, gameState)) do
+		if agentIndex == gameStateMaxAgent then
 			potential = maxValue(generateSuccessor(gameState, agentIndex, action), depth + 1, 0)
 		else
 			potential = maxValue(generateSuccessor(gameState, agentIndex, action), depth, agentIndex + 1)
@@ -347,6 +347,7 @@ function getLegalActions(agentIndex, gameState)
 						table.insert(adjTiles, {"floor", x, y})
 					end -- end if
 				end -- end can see
+				table.insert(adjTiles, {"hidden", x, y})
 			end -- end y loop
 		end -- end x loop
 
@@ -367,6 +368,8 @@ function getLegalActions(agentIndex, gameState)
 		local b = adjTiles[3][1]
 
 		local k = adjTiles[4][1]
+		crawl.mpr("working with agent number " .. agentIndex)
+		crawl.mpr("that agent's WAIT move is " .. adjTiles[5][1])
 		local wait = adjTiles[5][1]
 		local j = adjTiles[6][1]
 
@@ -383,7 +386,6 @@ function getLegalActions(agentIndex, gameState)
 	local moves = getLegalMovementActions(agentIndex, gameState)
 	local legalMoves = {}
 	for key, value in pairs(moves) do
-		--crawl.mpr(value[2])
 		if value[2] == "floor" or 
 			value[2] == "shallow" or 
 			value[2] == "monster" then
@@ -473,11 +475,20 @@ function main()
 --		for key, value in pairs(moves) do 
 --			crawl.mpr(value)
 --		end
-		local toTake = getAction(gameState)
+		gameStateMaxAgent = table.getn("number of agents is" .. gameState[6])
+		crawl.mpr(gameStateMaxAgent)
+		local toTake = getAction(1, gameState)
 		crawl.sendkeys(toTake)
 	-- if we are not in combat, this code will determine our actions:
 	else
 		crawl.mpr("not in combat")
-		crawl.sendkeys('o')
+		local hunger = gameState[6][1][2][3]
+		crawl.mpr("your hunger level is ".. hunger)
+		if hunger < 4 then
+			-- eat some food
+			crawl.mpr("we should eat some food!")
+		else
+			crawl.sendkeys('o')
+		end
 	end
 end
