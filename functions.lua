@@ -159,12 +159,14 @@ function getAction(agentIndex, gameState)
 --		crawl.mpr(k)
 --		crawl.mpr(v)
 --	end
-	local maxScore = 0
+	local maxScore = -100
 	local action = ""
 	for k,v in pairs(actionScores) do
-		if v > maxScore then
-			maxScore = v
-			action = k
+		crawl.mpr(v[2])
+		crawl.mpr(maxScore)
+		if v[2] > maxScore then
+			maxScore = v[2]
+			action = v[1]
 		end
 	end
 	crawl.mpr("returning action " .. action .. " with value " .. maxScore)
@@ -178,16 +180,17 @@ end
 
 function maxValue(gameState, depth, agentIndex, action)
 	--if isWinState(gameState) or isLoseState(gameState) or depth == globalDepth then
-	crawl.mpr("maxValue called with depth " .. depth)
 	if depth == globalDepth then
-		crawl.mpr("maxValue returning at max depth of " .. depth)
-		return scoreGameState(gameState)
+		toreturn = scoreGameState(gameState)
+		crawl.mpr("maxValue returning " .. toreturn .. " at max depth of " .. depth)
+		return toreturn --return scoreGameState(gameState)
 	end
 
-	local v = -100000
+	local v = 0
 	local potential = 0
 	for key, action2 in pairs(getLegalActions(agentIndex, gameState)) do
-		potential = minValue(generateSuccessor(gameState, agentIndex, action), depth + 1, agentIndex + 1, action2)
+		potential = minValue(generateSuccessor(gameState, agentIndex, action2), depth + 1, agentIndex + 1, action2)
+		crawl.mpr("maxValue potential is " .. potential .. " and v is " .. v)
 		if v > potential then
 			v = potential
 		end
@@ -198,20 +201,21 @@ end
 
 function minValue(gameState, depth, agentIndex, action)
 	--if isWinState(gameState) or isLoseState(gameState) or depth == globalDepth then
-	crawl.mpr("minValue called with depth " .. depth)
 	if depth == globalDepth then
-		crawl.mpr("minValue returning at max depth of " .. depth)
-		return scoreGameState(gameState)
+		toreturn = scoreGameState(gameState)
+		crawl.mpr("maxValue returning " .. toreturn .. " at max depth of " .. depth)
+		return toreturn --return scoreGameState(gameState)
 	end
 
-	local v = 100000
+	local v = 0
 	local potential = 0
 	for key, action2 in pairs(getLegalActions(agentIndex, gameState)) do
 		if agentIndex == gameStateMaxAgent then
-			potential = maxValue(generateSuccessor(gameState, agentIndex, action), depth + 1, 1, action2)
+			potential = maxValue(generateSuccessor(gameState, agentIndex, action2), depth + 1, 1, action2)
 		else
-			potential = maxValue(generateSuccessor(gameState, agentIndex, action), depth, agentIndex + 1, action2)
+			potential = maxValue(generateSuccessor(gameState, agentIndex, action2), depth, agentIndex + 1, action2)
 		end
+		crawl.mpr("minValue potential is " .. potential .. " and v is " .. v)
 		if v < potential then
 			v = potential
 		end
@@ -316,10 +320,6 @@ function scoreGameState(gameState)
 	local waterScore = getWaterScore(gameState[3])
 	local lavaScore = getLavaScore(gameState[4])
 	-- TODO: consider health, player and monster if possible
-	crawl.mpr("wallScore is " .. wallScore)
-	crawl.mpr("monsterScore is " .. monsterScore)
-	crawl.mpr("lavaScore is " .. lavaScore)
-	crawl.mpr("waterScore is " .. waterScore)
 	return wallScore + monsterScore + lavaScore + waterScore
 end
 
