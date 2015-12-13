@@ -351,16 +351,16 @@ function getLegalActions(agentIndex, gameState)
 		end -- end x loop
 
 
-		-- y = 1, 1  (up and left)
-		-- h = 1, 0  (left) 
-		-- b = 1, -1 (down and left)
+		-- y = -1, -1  (up and left)
+		-- h = -1, 0  (left) 
+		-- b = -1, 1 (down and left)
 
 		-- j = 0, 1  (down)
 		-- k = 0, -1 (up)
 
-		-- u = -1, 1 (up and right)
-		-- l = -1, 0 (right)
-		-- n = -1, -1 (down and right)
+		-- u = 1, 1 (up and right)
+		-- l = 1, 0 (right)
+		-- n = 1, -1 (down and right)
 
 		local y = adjTiles[1][1]
 		local h = adjTiles[2][1]
@@ -472,5 +472,6 @@ function main()
 	-- if we are not in combat, this code will determine our actions:
 	else
 		crawl.mpr("not in combat")
+		crawl.sendkeys('o')
 	end
 end
