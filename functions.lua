@@ -398,8 +398,10 @@ function generateSuccessor(gameState, agentIndex, action)
 	local playerY = playerPos[2]
 	local new_monster_list = {}
 	for monster in monster_list do
-		monsterX = monster[2]
-		monstery = monster[3]
+		local monsterX = monster[2]
+		local monstery = monster[3]
+		local newX = 0
+		local newY = 0
 		local mDistance = manhattanDistance(playerX, playerY, monsterX, monsterY)
 		for x=-1,1 do
 			for y=-1,1 do
@@ -407,14 +409,16 @@ function generateSuccessor(gameState, agentIndex, action)
 				local newMonsterY = monsterY + y
 				local newMDistance = manhattanDistance(newMonsterX, newMonsterY, playerX, playerY)
 				if newMDistance < mDistance then
-					table.insert(new_monster_list, {monster[1], newMonsterX, newMonsterY})
+					newX = newMonsterX
+					newY = newMonsterY
 				end
 			end
 		end
+		table.insert(new_monster_list, {monster[1], newX, newY})
 	end
 	
-	local gameState = {wall_list, new_monster_list, water_list, lava_list, item_list, agent_list}
-	return gameState
+	local newGameState = {wall_list, new_monster_list, water_list, lava_list, item_list, agent_list}
+	return newGameState
 
 end
 
