@@ -67,8 +67,8 @@ function get_game_state()
 
 
 	-- player is a variable that holds information about the player
-	local player = {{x, y} {you.xl(), you.hp(), you.hunger()}
-	table.insert(agents_list player)
+	local player = {{0, 0}, {you.xl(), you.hp(), you.hunger()}}
+	table.insert(agents_list, player)
 
 	-- for every cell inside our max vision range ... 
 	for x = -8,8 do
@@ -85,7 +85,7 @@ function get_game_state()
 				if m and not m:is_safe() then
 					crawl.mpr(m:name())
 					table.insert(monster_list, {m:name(), x, y})
-					table.insert(agents_list {x, y}, (m:name()))
+					table.insert(agents_list, {{x, y}, (m:name())})
 				end
 				-- check if that cell has water
 				local w = find_water(x, y)
@@ -304,11 +304,17 @@ end
 function getLegalActions(agentIndex, gameState)
 	-- movement: 
 	function getLegalMovementActions(agentIndex, gameState)
+		-- get the agent from the game state that we are 
+		-- finding the legal actions for
+		local agent = gameState[6][agentIndex]
+		local agentX = agent[1][1]
+		local agentY = agent[1][2]
+
 		-- possible movement actions are one of: 
 		-- y, u, h, j, k, l, b, n. 
 		local adjTiles = {}
-		for x = -1,1 do
-			for y = -1,1 do
+		for x = agentX - 1, agentX + 1 do
+			for y = agentY - 1, agentY + 1 do
 				-- if we can see that cell ...
 				if you.see_cell(x, y) then
 				-- check if that cell is a wall
@@ -348,13 +354,13 @@ function getLegalActions(agentIndex, gameState)
 
 		local y = adjTiles[1][1]
 		local h = adjTiles[2][1]
-		local u = adjTiles[3][1]
+		local b = adjTiles[3][1]
 
 		local k = adjTiles[4][1]
 		local wait = adjTiles[5][1]
 		local j = adjTiles[6][1]
 
-		local b = adjTiles[7][1]
+		local u = adjTiles[7][1]
 		local l = adjTiles[8][1]
 		local n = adjTiles[9][1]
 
@@ -364,17 +370,10 @@ function getLegalActions(agentIndex, gameState)
 
 	-- for the given agentIndex and gameState, get a list of the legal
 	-- actions of that agent.
-	
-	-- the position of the agent specified by the given agentIndex
-	local agentPosn = {0, 0}
-	local monster_list = gameState[2]
-	if agentIndex > 0 then
-		agentPosn = {monster_list[agentIndex][2], monster_list[agentIndex][3]}
-	end
-
-	local moves = getLegalMovementActions(0, gameState)
+	local moves = getLegalMovementActions(agentIndex, gameState)
 	local legalMoves = {}
 	for key, value in pairs(moves) do
+		--crawl.mpr(value[2])
 		if value[2] == "floor" or 
 			value[2] == "shallow" or 
 			value[2] == "monster" then
@@ -423,6 +422,7 @@ function manhattanDistance(x1, y1, x2, y2)
 	dX = x1 - x2
 	dY = y1 - y2
 	return math.abs(dX) + math.abs(dY)
+end
 
 function main()
 	-- Essentially we want to split the game state into two categories:
@@ -450,7 +450,7 @@ function main()
 		crawl.mpr("IN MAIN the game state is equal to " .. currentScore)
 		-- list the actions available to the player:
 		crawl.mpr("the actions available to the player are: ")
-		local moves = getLegalActions(0, gameState)
+		local moves = getLegalActions(1, gameState)
 		for key, value in pairs(moves) do 
 			crawl.mpr(value)
 		end
