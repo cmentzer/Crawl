@@ -1,3 +1,5 @@
+-- deep copy a table
+-- work around for lua's habit of copying by reference, not by value
 function deepCopy(object)
     local lookup_table = {}
     local function _copy(object)
@@ -17,6 +19,7 @@ function deepCopy(object)
 end
 
 
+-- create a representation of the game state
 function get_game_state()
 	-- function to get the list of items that we can see
 	function populate_item_list(x, y)
@@ -177,6 +180,7 @@ function get_game_state()
 
 end
 
+-- choose the max value action for an agent to take
 function getAction(gameState)
 	local actionScores = {}
 	local currentScore = 0
@@ -192,18 +196,11 @@ function getAction(gameState)
 				end
 			end
 		end
-			
-
 		--crawl.mpr("that score is " .. currentScore)
 
 		table.insert(actionScores, {action, currentScore})
 	end
 
-	-- crawl.mpr("score table is " )
-	for k,v in pairs(actionScores) do
-	--	crawl.mpr(v[1])
---		crawl.mpr(v[2])
-	end
 	local maxScore = -100
 	local action = ""
 	for k,v in pairs(actionScores) do
@@ -218,17 +215,18 @@ function getAction(gameState)
 	return action[1]
 end
 
+-- kick off minimax
 function getScoreForAction(action, gameState) 
 	-- a global depth is set in main
 	return minValue(generateSuccessor(gameState, 1, action), 1, 2, action)
 end
 
+-- maximizing half of minimax
 function maxValue(gameState, depth, agentIndex, action)
-	--if isWinState(gameState) or isLoseState(gameState) or depth == globalDepth then
 	if depth > globalDepth then
-		toreturn = scoreGameState(gameState, agentIndex, action)
+		toReturn = scoreGameState(gameState, agentIndex, action)
 		--crawl.mpr("maxValue returning " .. toreturn .. " at max depth of " .. depth)
-		return toreturn --return scoreGameState(gameState)
+		return toReturn 
 	end
 
 	--crawl.mpr("in max value, depth is " .. depth)
@@ -247,12 +245,12 @@ function maxValue(gameState, depth, agentIndex, action)
 	return v
 end
 
+-- minimizing half of minimax
 function minValue(gameState, depth, agentIndex, action)
-	--if isWinState(gameState) or isLoseState(gameState) or depth == globalDepth then
 	if depth > globalDepth then
-		toreturn = scoreGameState(gameState, agentIndex, action)
+		toReturn = scoreGameState(gameState, agentIndex, action)
 		--crawl.mpr("maxValue returning " .. toreturn .. " at max depth of " .. depth)
-		return toreturn --return scoreGameState(gameState)
+		return toReturn
 	end
 
 	--crawl.mpr("minvalue called, gamestate has player position as " .. gameState[6][1][1][1] .. ", " .. gameState[6][1][1][2])
@@ -279,6 +277,7 @@ function minValue(gameState, depth, agentIndex, action)
 	return v
 end
 
+-- compute a score for minimax to use when evaluating game states
 function scoreGameState(gameState, agentIndex, action)
 	-- first, lets get the score from the number of adjacent walls
 	local function numAdjWalls(wall_list)
@@ -379,20 +378,14 @@ function scoreGameState(gameState, agentIndex, action)
 		attackScoreBonus = 20
 		crawl.mpr("ATTACK BONUS ACTIVE for key: " .. action[1])
 	end
-	-- TODO: consider health, player and monster if possible
-	local toreturn = wallScore * 3 + monsterScore + lavaScore + waterScore + attackScoreBonus
+
+	local toReturn = wallScore * 3 + monsterScore + lavaScore + waterScore + attackScoreBonus
 	--crawl.mpr("scoreGameState returning ... " .. toreturn)
-	return toreturn
+	return toReturn
 end
 
-function isWinState(gameState)
-	-- undefined, probably forever
-end
 
-function isLoseState(gameState)
-	-- undefined, probably forever
-end
-
+-- get a list of possible actions for an agent to take
 function getLegalActions(agentIndex, gameState)
 	-- movement: 
 	function getLegalMovementActions(agentIndex, gameState)
@@ -437,7 +430,7 @@ function getLegalActions(agentIndex, gameState)
 			end -- end y loop
 		end -- end x loop
 
-
+		-- movement buttons result in the following position changes:
 		-- y = -1, -1  (up and left)
 		-- h = -1, 0  (left) 
 		-- b = -1, 1 (down and left)
@@ -484,6 +477,7 @@ function getLegalActions(agentIndex, gameState)
 	return legalMoves
 end
 
+-- Create a game state that results from a given agent taking a given action
 function generateSuccessor(gameState, agentIndex, action)
 
 	local agent = gameState[6][agentIndex]
@@ -636,14 +630,6 @@ function main()
 	-- if we are in combat, this code will determine our actions:
 	if inCombat then
 		crawl.mpr("in combat !!!")
---		currentScore = scoreGameState(gameState)
---		crawl.mpr("IN MAIN the game state is equal to " .. currentScore)
-		-- list the actions available to the player:
---		crawl.mpr("the actions available to the player are: ")
---		local moves = getLegalActions(1, gameState)
---		for key, value in pairs(moves) do 
---			crawl.mpr(value)
---		end
 		gameStateMaxAgent = table.getn(gameState[6])
 		if gameStateMaxAgent > 3 then
 			gameStateMaxAgent = 3
