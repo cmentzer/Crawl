@@ -1,3 +1,22 @@
+function deepCopy(object)
+    local lookup_table = {}
+    local function _copy(object)
+        if type(object) ~= "table" then
+            return object
+        elseif lookup_table[object] then
+            return lookup_table[object]
+        end
+        local new_table = {}
+        lookup_table[object] = new_table
+        for index, value in pairs(object) do
+            new_table[_copy(index)] = _copy(value)
+        end
+        return setmetatable(new_table, getmetatable(object))
+    end
+    return _copy(object)
+end
+
+
 function get_game_state()
 	-- function to get the list of items that we can see
 	function populate_item_list(x, y)
@@ -15,7 +34,9 @@ function get_game_state()
 		--crawl.mpr("feature at " .. x .. " " .. y .. " is " .. f .. "\n")
 		if f == "rock_wall" or
 			f == "stone_wall" or
-			f == "permarock_wall" then
+			f == "permarock_wall" or
+			f == "tree" or
+			f == "closed_door" then
 			return 1
 		else 
 			return 0
@@ -154,15 +175,12 @@ function get_game_state()
 
 end
 
-function getAction(agentIndex, gameState)
+function getAction(gameState)
 	local actionScores = {}
 	local currentScore = 0
-	local legalActions = getLegalActions(agentIndex, gameState)
-	for key, a in pairs(legalActions) do 
-		crawl.mpr(a[1])
-	end
+	local legalActions = getLegalActions(1, gameState)
 	for key, action in pairs(legalActions) do
-		--crawl.mpr("getting score for action " .. action[1])
+		crawl.mpr("getting score for action " .. action[1])
 		currentScore = getScoreForAction(action, gameState)
 		-- penalize the "do nothing" action when we are adjacent to monsters
 		if action[1] == "." then
@@ -200,24 +218,24 @@ end
 
 function getScoreForAction(action, gameState) 
 	globalDepth = 1 -- can mess with this
-	return maxValue(gameState, 0, 1, action)
+	return minValue(generateSuccessor(gameState, 1, action), 1, 2, action)
 end
 
 function maxValue(gameState, depth, agentIndex, action)
 	--if isWinState(gameState) or isLoseState(gameState) or depth == globalDepth then
 	if depth > globalDepth then
-		toreturn = scoreGameState(gameState, action)
+		toreturn = scoreGameState(gameState, agentIndex, action)
 		--crawl.mpr("maxValue returning " .. toreturn .. " at max depth of " .. depth)
 		return toreturn --return scoreGameState(gameState)
 	end
 
-	crawl.mpr("in max value, depth is " .. depth)
+	--crawl.mpr("in max value, depth is " .. depth)
 
 	local v = -10000
 	local potential = 0
 	for key, action2 in pairs(getLegalActions(agentIndex, gameState)) do
 		--crawl.mpr("action2 200 is " .. action2)
-		potential = minValue(generateSuccessor(gameState, agentIndex, action2), depth + 1, agentIndex + 1, action2)
+		potential = minValue(generateSuccessor(gameState, agentIndex, action), depth + 1, agentIndex + 1, action2)
 		--crawl.mpr("that action returned value " .. potential)
 		if potential > v then
 			v = potential
@@ -230,33 +248,36 @@ end
 function minValue(gameState, depth, agentIndex, action)
 	--if isWinState(gameState) or isLoseState(gameState) or depth == globalDepth then
 	if depth > globalDepth then
-		toreturn = scoreGameState(gameState, action)
+		toreturn = scoreGameState(gameState, agentIndex, action)
 		--crawl.mpr("maxValue returning " .. toreturn .. " at max depth of " .. depth)
 		return toreturn --return scoreGameState(gameState)
 	end
 
-	crawl.mpr("in min value, depth is " .. depth)
+	--crawl.mpr("minvalue called, gamestate has player position as " .. gameState[6][1][1][1] .. ", " .. gameState[6][1][1][2])
+	--crawl.mpr("and " .. agentIndex .. " position as " .. gameState[6][2][1][1] .. ", " .. gameState[6][2][1][2])
+	--crawl.mpr("in min value, depth is " .. depth)
 
 	local v = 10000
 	local potential = 0
 	for key, action2 in pairs(getLegalActions(agentIndex, gameState)) do
 		--crawl.mpr("action2 222 is " .. action2)
 		if agentIndex == gameStateMaxAgent then
-			potential = maxValue(generateSuccessor(gameState, agentIndex, action2), depth + 1, 1, action2)
-			--crawl.mpr("that action returned value " .. potential)
+			--crawl.mpr("Bleh --- " .. action2[1] .. " ---")
+			successor = generateSuccessor(gameState, agentIndex, action2)
+			potential = maxValue(successor, depth + 1, 1, action)
 		else
-			potential = maxValue(generateSuccessor(gameState, agentIndex, action2), depth, agentIndex + 1, action2)
-			--crawl.mpr("that action returned value " .. potential)
+			potential = minValue(generateSuccessor(gameState, agentIndex, action2), depth, agentIndex + 1, action)
 		end
+		--crawl.mpr("that action returned value " .. potential)
 		if potential < v then
 			v = potential
 		end
 	end
---	crawl.mpr("minvalue returning " .. v)
+	--crawl.mpr("minvalue returning " .. v)
 	return v
 end
 
-function scoreGameState(gameState, action)
+function scoreGameState(gameState, agentIndex, action)
 	-- first, lets get the score from the number of adjacent walls
 	local function numAdjWalls(wall_list)
 	local adjWalls = 0
@@ -280,7 +301,7 @@ function scoreGameState(gameState, action)
 		for key, monster in pairs(monster_list) do
 			local monsterX = monster[2]
 			local monsterY = monster[3]
-			score = score + 8 - manhattanDistance(playerX, playerY, monsterX, monsterY)
+			score = score -8 + manhattanDistance(playerX, playerY, monsterX, monsterY)
 		end
 		return score
 	end
@@ -352,12 +373,12 @@ function scoreGameState(gameState, action)
 	local waterScore = getWaterScore(gameState[3])
 	local lavaScore = getLavaScore(gameState[4])
 	local attackScoreBonus = 0
-	if action[2] == "monster" then
+	if action[2] == "monster" and agentIndex == 1 then
 		attackScoreBonus = 10
-		--crawl.mpr("ATTACK BONUS ACTIVE!!")
+		--crawl.mpr("ATTACK BONUS ACTIVE for key: " .. action[1])
 	end
 	-- TODO: consider health, player and monster if possible
-	local toreturn = wallScore * 2 + monsterScore + lavaScore + waterScore + attackScoreBonus
+	local toreturn = wallScore * 3 + monsterScore + lavaScore + waterScore + attackScoreBonus
 	--crawl.mpr("scoreGameState returning ... " .. toreturn)
 	return toreturn
 end
@@ -462,6 +483,7 @@ function getLegalActions(agentIndex, gameState)
 end
 
 function generateSuccessor(gameState, agentIndex, action)
+
 	local agent = gameState[6][agentIndex]
 	local player = gameState[6][1]
 	local agentX = agent[1][1]
@@ -470,10 +492,10 @@ function generateSuccessor(gameState, agentIndex, action)
 	local newY = 0
 
 	if action[1] == "y" then
-		if action[2] == "monster" then
+		if action[2] == "monster" and agentIndex == 1 then
 			newX = agentX
 			newY = agentY
-		elseif(agentX - 1 == player[1][1] and agentY - 1 == player [1][2]) then
+		elseif(agentX - 1 == player[1][1] and agentY - 1 == player[1][2]) then
 			newX = agentX
 			newY = agentY
 		else
@@ -481,10 +503,10 @@ function generateSuccessor(gameState, agentIndex, action)
 			newY = agentY - 1
 		end
 	elseif action[1] == "h" then 
-		if action[2] == "monster" then
+		if action[2] == "monster" and agentIndex == 1  then
 			newX = agentX
 			newY = agentY
-		elseif(agentX - 1 == player[1][1] and agentY == player [1][2]) then
+		elseif(agentX - 1 == player[1][1] and agentY == player[1][2]) then
 			newX = agentX
 			newY = agentY
 		else 
@@ -492,10 +514,10 @@ function generateSuccessor(gameState, agentIndex, action)
 			newY = agentY
 		end
 	elseif action[1] == "b" then
-		if action[2] == "monster" then
+		if action[2] == "monster" and agentIndex == 1 then
 			newX = agentX
 			newY = agentY
-		elseif(agentX - 1 == player[1][1] and agentY + 1 == player [1][2]) then
+		elseif(agentX - 1 == player[1][1] and agentY + 1 == player[1][2]) then
 			newX = agentX
 			newY = agentY
 		else 
@@ -503,10 +525,11 @@ function generateSuccessor(gameState, agentIndex, action)
 			newY = agentY + 1
 		end
 	elseif action[1] == "j" then 
-		if action[2] == "monster" then
+		if action[2] == "monster" and agentIndex == 1 then
+			--crawl.mpr("the player cannot move down, because there is a monster in the way")
 			newX = agentX
 			newY = agentY
-		elseif(agentX == player[1][1] and agentY + 1 == player [1][2]) then
+		elseif(agentX == player[1][1] and agentY + 1 == player[1][2]) then
 			newX = agentX
 			newY = agentY
 		else 
@@ -514,10 +537,10 @@ function generateSuccessor(gameState, agentIndex, action)
 			newY = agentY + 1
 		end
 	elseif action[1] == "k" then
-		if action[2] == "monster" then
+		if action[2] == "monster" and agentIndex == 1 then
 			newX = agentX
 			newY = agentY
-		elseif(agentX == player[1][1] and agentY - 1 == player [1][2]) then
+		elseif(agentX == player[1][1] and agentY - 1 == player[1][2]) then
 			newX = agentX
 			newY = agentY
 		else 
@@ -525,10 +548,10 @@ function generateSuccessor(gameState, agentIndex, action)
 			newY = agentY - 1
 		end
 	elseif action[1] == "u" then
-		if action[2] == "monster" then
+		if action[2] == "monster" and agentIndex == 1 then
 			newX = agentX
 			newY = agentY
-		elseif(agentX + 1 == player[1][1] and agentY + 1 == player [1][2]) then
+		elseif(agentX + 1 == player[1][1] and agentY + 1 == player[1][2]) then
 			newX = agentX
 			newY = agentY
 		else 
@@ -536,10 +559,10 @@ function generateSuccessor(gameState, agentIndex, action)
 			newY = agentY + 1
 		end
 	elseif action[1] == "l" then
-		if action[2] == "monster" then
+		if action[2] == "monster" and agentIndex == 1 then
 			newX = agentX
 			newY = agentY
-		elseif(agentX + 1 == player[1][1] and agentY == player [1][2]) then
+		elseif(agentX + 1 == player[1][1] and agentY == player[1][2]) then
 			newX = agentX
 			newY = agentY
 		else 
@@ -547,10 +570,10 @@ function generateSuccessor(gameState, agentIndex, action)
 			newY = agentY
 		end
 	elseif action[1] == "n" then
-		if action[2] == "monster" then
+		if action[2] == "monster" and agentIndex == 1 then
 			newX = agentX
 			newY = agentY
-		elseif(agentX + 1 == player[1][1] and agentY - 1 == player [1][2]) then
+		elseif(agentX + 1 == player[1][1] and agentY - 1 == player[1][2]) then
 			newX = agentX
 			newY = agentY	
 		else 
@@ -565,11 +588,19 @@ function generateSuccessor(gameState, agentIndex, action)
 		return "invalid key"
 	end
 
-	local newAgentList = gameState[6]
+	local newAgentList = deepCopy(gameState[6])
+	--crawl.mpr("updating the position of agent number ------- " .. agentIndex)
 	newAgentList[agentIndex] = {{newX, newY}, gameState[6][agentIndex][2]}
 
-	local newGameState = {gameState[1], gameState[2], gameState[3], gameState[4], gameState[5], newAgentList}
-	crawl.mpr("after agentIndex " .. agentIndex .. "s move " .. action[1] .. " that agent is at position: " .. newX .. ", " .. newY)
+	local newGameState = {deepCopy(gameState[1]), 
+	deepCopy(gameState[2]), 
+	deepCopy(gameState[3]),
+	deepCopy(gameState[4]),
+	deepCopy(gameState[5]),
+	newAgentList,
+	deepCopy(gameState[7])}
+	--crawl.mpr("after agentIndex " .. agentIndex .. "s move " .. action[1] .. " the player is at position: " .. newAgentList[1][1][1] .. ", " .. newAgentList[1][1][2])
+	--crawl.mpr(" ...................... and the monster is at position: " .. newAgentList[2][1][1] .. ", " .. newAgentList[2][1][2])
 	return newGameState
 
 end
@@ -613,7 +644,7 @@ function main()
 --		end
 		gameStateMaxAgent = table.getn(gameState[6])
 		crawl.mpr("number of agents is" .. gameStateMaxAgent)
-		local toTake = getAction(1, gameState)
+		local toTake = getAction(gameState)
 		crawl.sendkeys(toTake)
 	-- if we are not in combat, this code will determine our actions:
 	else
