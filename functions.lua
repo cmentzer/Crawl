@@ -31,13 +31,14 @@ function get_game_state()
 	-- function to get the list of walls that we can see
 	function find_wall(x, y)
 		local f = view.feature_at(x, y)
-		--crawl.mpr("feature at " .. x .. " " .. y .. " is " .. f .. "\n")
+--		crawl.mpr("feature at " .. x .. " " .. y .. " is " .. f .. "\n")
 		if f == "rock_wall" or
 			f == "metal_wall" or
 			f == "stone_wall" or
 			f == "permarock_wall" or
 			f == "tree" or
-			f == "closed_door" then
+			f == "closed_door" or
+			f == "clear_rock_wall" then
 			return 1
 		else 
 			return 0
@@ -218,7 +219,7 @@ function getAction(gameState)
 end
 
 function getScoreForAction(action, gameState) 
-	globalDepth = 3 -- can mess with this
+	-- a global depth is set in main
 	return minValue(generateSuccessor(gameState, 1, action), 1, 2, action)
 end
 
@@ -646,6 +647,9 @@ function main()
 		gameStateMaxAgent = table.getn(gameState[6])
 		if gameStateMaxAgent > 3 then
 			gameStateMaxAgent = 3
+			globalDepth = 1
+		else
+			globalDepth = 3
 		end
 		crawl.mpr("number of agents is" .. gameStateMaxAgent)
 		local toTake = getAction(gameState)
