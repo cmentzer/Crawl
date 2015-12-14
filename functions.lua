@@ -50,11 +50,16 @@ function get_game_state()
 		end
 	end
 
-	-- function to find permafood in our inventory
-	---function find_food(x,y)
-		---local i = 0
-		---for i = 0, 51 do
-		---	if items.inslot(i)
+	-- function to populate inventory
+	function populate_inventory(inventory)
+		local i = 0
+		for i = 0, 51 do
+			if items.inslot(i) then
+				table.insert(inventory, items.inslot(i))
+			end
+		end
+		return inventory
+	end
 
 	-- start getting the game state:
 
@@ -77,6 +82,9 @@ function get_game_state()
 	-- player is a variable that holds information about the player
 	local player = {{0, 0}, {you.xl(), you.hp(), you.hunger()}}
 	table.insert(agents_list, player)
+
+	-- inventory is our inventory
+	inventory = populate_inventory({})
 
 	-- for every cell inside our max vision range ... 
 	for x = -8,8 do
@@ -141,7 +149,7 @@ function get_game_state()
 	--crawl.mpr("and " .. table.getn(item_list) .. " items on the floor ... \n")
 	--crawl.mpr(" ... the current value attributed to this game state is: " .. "10 \n")
 
-	local gameState = {wall_list, monster_list, water_list, lava_list, item_list, agents_list}
+	local gameState = {wall_list, monster_list, water_list, lava_list, item_list, agents_list, inventory}
 	return gameState
 
 end
@@ -485,6 +493,7 @@ function main()
 
 	local inCombat = false
 	local gameState = get_game_state()
+	local inventory = gameState[7]
 	-- if there are monsters on the screen, we are in combat, and need to switch to 
 	-- our "combat" logic
 	if table.getn(gameState[2]) > 0 then
@@ -517,6 +526,24 @@ function main()
 		if hunger < 4 then
 			-- eat some food
 			crawl.mpr("we should eat some food!")
+
+			-- the position of an item in our inventory LIST is 1 greater than 
+			-- that item's position in our actual inventory. That is, if there is 
+			-- food at slot 4 in our inventory LIST, we need to get the key for the item
+			-- in slot 3 in the game's inventory TABLE.
+			local toEat = nil
+			for key, item in pairs(inventory) do 
+				if item.class() == "Comestibles" then
+					crawl.mpr("EATING ONE OF MY " .. item.name())
+					--crawl.mpr(items.inslot(key - 1).name())
+					toEat = items.index_to_letter(key - 1)
+					break 
+				end
+			end
+			if toEat then
+				crawl.sendkeys('e')
+				crawl.sendkeys(toEat)
+			end
 		else
 			crawl.sendkeys('o')
 		end
