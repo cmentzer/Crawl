@@ -1,5 +1,9 @@
 Functions: 
 
+	deepCopy(object)
+		takes a table
+		returns a deep copy of the table passed in
+
 	get_game_state()
 		no arguments
 		returns game state, a
@@ -10,6 +14,7 @@ Functions:
 				-- list of visible lava
 				-- list of visible items
 				-- list of agents
+				-- list of items in the inventory
 		sub functions:
 			populate_item_list(x, y)
 				takes a position x and y, 
@@ -37,9 +42,16 @@ Functions:
 		returns the score of the state that taking the given 
 			action would place you at
 
-	maxValue
-	minValue
+	maxValue(gameState, depth, agentIndex, action)
+		takes a game state, a search depth, an index, and an action
+		returns the maximum score for the game state
+		this is half of the minimax algorithm
 
+	minValue
+		takes a game state, a search depth, an index, and an action
+		returns the minimum score for the game state
+		this is half of the minimax algorithm
+		
 	scoreGameState(gameState)
 	takes the game state,
 	returns a number score of that game state
@@ -50,14 +62,35 @@ Functions:
 		getMonsterScore(monster_list)
 			given the list of monsters,
 			return the score from monsters based on thier positions relative to ours
-		getWaterScore ...
-		getLavaScore ...
+		getWaterScore(water_list)
+			takes a list of water tiles
+			returnes the score from water based on their positions relative to ours
+		getLavaScore(lava_list)
+			takes a list of lava tiles
+			returnes the score from lava based on their positions relative to ours
 
-	isWinState ...
-	isLoseState ...
-	getLegalActions ...
-		getLegalMovementActions ...
+	getLegalActions(agentIndex, gameState)
+			takes an index and a game state
+			returns all legal actions that the agent at agentIndex can take
+			AI can be extended here with item actions, etc
+		getLegalMovementActions: same thing, but only movement actions
 
-	generateSuccessor ...
-	main ...
 
+	generateSuccessor(gameState, agentIndex, action)
+		takes a game sate, an index, and an action
+		creates a new gameState equal to the result of the agent at agentIndex taking 	
+			argument action from argument game state 
+
+	manhattanDistance(x1, y1, x2, y2)
+		takes 4 integers for positions
+		returns the grid distance (manhattan distance) between two xy coordinates
+
+	getClosestAgents(agentList)
+		takes a list of agents (ie, monsters and player)
+		returns the 3 closest monsters to the player
+
+	main()
+		takes nothing
+		returns nothing
+		determines combat status and decides what action to take accordingly
+		determines search depth dynamically to aid run time
