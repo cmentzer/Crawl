@@ -33,6 +33,7 @@ function get_game_state()
 		local f = view.feature_at(x, y)
 		--crawl.mpr("feature at " .. x .. " " .. y .. " is " .. f .. "\n")
 		if f == "rock_wall" or
+			f == "metal_wall" or
 			f == "stone_wall" or
 			f == "permarock_wall" or
 			f == "tree" or
@@ -186,7 +187,7 @@ function getAction(gameState)
 		if action[1] == "." then
 			for key, action2 in pairs(legalActions) do
 				if action2[2] == "monster" then
-					currentScore = currentScore - 20
+					currentScore = currentScore - 3
 				end
 			end
 		end
@@ -217,7 +218,7 @@ function getAction(gameState)
 end
 
 function getScoreForAction(action, gameState) 
-	globalDepth = 1 -- can mess with this
+	globalDepth = 3 -- can mess with this
 	return minValue(generateSuccessor(gameState, 1, action), 1, 2, action)
 end
 
@@ -235,7 +236,7 @@ function maxValue(gameState, depth, agentIndex, action)
 	local potential = 0
 	for key, action2 in pairs(getLegalActions(agentIndex, gameState)) do
 		--crawl.mpr("action2 200 is " .. action2)
-		potential = minValue(generateSuccessor(gameState, agentIndex, action), depth + 1, agentIndex + 1, action2)
+		potential = minValue(generateSuccessor(gameState, agentIndex, action2), depth + 1, agentIndex + 1, action)
 		--crawl.mpr("that action returned value " .. potential)
 		if potential > v then
 			v = potential
@@ -301,7 +302,7 @@ function scoreGameState(gameState, agentIndex, action)
 		for key, monster in pairs(monster_list) do
 			local monsterX = monster[2]
 			local monsterY = monster[3]
-			score = score -8 + manhattanDistance(playerX, playerY, monsterX, monsterY)
+			score = score - 8 + manhattanDistance(playerX, playerY, monsterX, monsterY)
 		end
 		return score
 	end
@@ -374,8 +375,8 @@ function scoreGameState(gameState, agentIndex, action)
 	local lavaScore = getLavaScore(gameState[4])
 	local attackScoreBonus = 0
 	if action[2] == "monster" and agentIndex == 1 then
-		attackScoreBonus = 10
-		--crawl.mpr("ATTACK BONUS ACTIVE for key: " .. action[1])
+		attackScoreBonus = 20
+		crawl.mpr("ATTACK BONUS ACTIVE for key: " .. action[1])
 	end
 	-- TODO: consider health, player and monster if possible
 	local toreturn = wallScore * 3 + monsterScore + lavaScore + waterScore + attackScoreBonus
@@ -643,6 +644,9 @@ function main()
 --			crawl.mpr(value)
 --		end
 		gameStateMaxAgent = table.getn(gameState[6])
+		if gameStateMaxAgent > 3 then
+			gameStateMaxAgent = 3
+		end
 		crawl.mpr("number of agents is" .. gameStateMaxAgent)
 		local toTake = getAction(gameState)
 		crawl.sendkeys(toTake)
@@ -680,7 +684,11 @@ function main()
 				--try_emergency()
 			crawl.sendkeys('5')
 		else
+
+
 			crawl.sendkeys('o')
+			crawl.delay(100)
+
 		end
 	end
 end
