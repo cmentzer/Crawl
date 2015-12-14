@@ -157,10 +157,21 @@ end
 function getAction(agentIndex, gameState)
 	local actionScores = {}
 	local currentScore = 0
-	for key, action in pairs(getLegalActions(agentIndex, gameState)) do
-	crawl.mpr("getting score for action " .. action)
+	local legalActions = getLegalActions(agentIndex, gameState)
+	for key, action in pairs(legalActions) do
+		crawl.mpr("getting score for action " .. action[1])
 		currentScore = getScoreForAction(action, gameState)
-	crawl.mpr("that score is " .. currentScore)
+		-- penalize the "do nothing" action when we are adjacent to monsters
+		if action[1] == "." then
+			for key, action2 in pairs(legalActions) do
+				if action2[2] == "monster" then
+					currentScore = currentScore - 20
+				end
+			end
+		end
+			
+
+		crawl.mpr("that score is " .. currentScore)
 
 		table.insert(actionScores, {action, currentScore})
 	end
@@ -180,19 +191,19 @@ function getAction(agentIndex, gameState)
 			action = v[1]
 		end
 	end
-	--crawl.mpr("returning action " .. action .. " with value " .. maxScore)
-	return action
+	crawl.mpr("returning action " .. action[1] .. " with value " .. maxScore)
+	return action[1]
 end
 
 function getScoreForAction(action, gameState) 
-	globalDepth = 2 -- can mess with this
+	globalDepth = 0 -- can mess with this
 	return maxValue(generateSuccessor(gameState, 1, action), 0, 1, action)
 end
 
 function maxValue(gameState, depth, agentIndex, action)
 	--if isWinState(gameState) or isLoseState(gameState) or depth == globalDepth then
 	if depth == globalDepth then
-		toreturn = scoreGameState(gameState)
+		toreturn = scoreGameState(gameState, action)
 		--crawl.mpr("maxValue returning " .. toreturn .. " at max depth of " .. depth)
 		return toreturn --return scoreGameState(gameState)
 	end
@@ -214,7 +225,7 @@ end
 function minValue(gameState, depth, agentIndex, action)
 	--if isWinState(gameState) or isLoseState(gameState) or depth == globalDepth then
 	if depth == globalDepth then
-		toreturn = scoreGameState(gameState)
+		toreturn = scoreGameState(gameState, action)
 		--crawl.mpr("maxValue returning " .. toreturn .. " at max depth of " .. depth)
 		return toreturn --return scoreGameState(gameState)
 	end
@@ -238,7 +249,7 @@ function minValue(gameState, depth, agentIndex, action)
 	return v
 end
 
-function scoreGameState(gameState)
+function scoreGameState(gameState, action)
 	-- first, lets get the score from the number of adjacent walls
 	local function numAdjWalls(wall_list)
 	local adjWalls = 0
@@ -262,9 +273,9 @@ function scoreGameState(gameState)
 		for key, monster in pairs(monster_list) do
 			local monsterX = monster[2]
 			local monsterY = monster[3]
-			score = score + manhattanDistance(playerX, playerY, monsterX, monsterY)
+			score = score + 8 - manhattanDistance(playerX, playerY, monsterX, monsterY)
 		end
-		return 0 - score
+		return score
 	end
 
 	-- then, computer score from water. Like walls and lava, standing NEXT TO water is good, 
@@ -298,7 +309,7 @@ function scoreGameState(gameState)
 		if standingInSWater then
 			-- sometimes standing in shallow water is unavoidable, so we want to make sure
 			-- that the value we attribute to it is not TOO low. 
-			return -5
+			return -15
 		elseif standingInDWater then
 			return -100000
 		else
@@ -333,8 +344,13 @@ function scoreGameState(gameState)
 	local monsterScore = getMonsterScore(gameState[2])
 	local waterScore = getWaterScore(gameState[3])
 	local lavaScore = getLavaScore(gameState[4])
+	local attackScoreBonus = 0
+	if action[2] == "monster" then
+		attackScoreBonus = 10
+		crawl.mpr("ATTACK BONUS ACTIVE!!")
+	end
 	-- TODO: consider health, player and monster if possible
-	local toreturn = wallScore + monsterScore + lavaScore + waterScore
+	local toreturn = wallScore * 2 + monsterScore + lavaScore + waterScore + attackScoreBonus
 	--crawl.mpr("scoreGameState returning ... " .. toreturn)
 	return toreturn
 end
@@ -432,7 +448,7 @@ function getLegalActions(agentIndex, gameState)
 		if value[2] == "floor" or 
 			value[2] == "shallow" or 
 			value[2] == "monster" then
-			table.insert(legalMoves, value[1])
+			table.insert(legalMoves, value)
 		end
 	end
 	return legalMoves
@@ -440,36 +456,101 @@ end
 
 function generateSuccessor(gameState, agentIndex, action)
 	local agent = gameState[6][agentIndex]
+	local player = gameState[6][1]
 	local agentX = agent[1][1]
 	local agentY  = agent[1][2]
 	local newX = 0
 	local newY = 0
 
-	if action == "y" then
-		newX = agentX - 1
-		newY = agentY - 1
-	elseif action == "h" then 
-		newX = agentX - 1
-		newY = agentY
-	elseif action == "b" then
-		newX = agentX - 1
-		newY = agentY + 1
-	elseif action == "j" then 
-		newX = agentX
-		newY = agentY + 1
-	elseif action == "k" then
-		newX = agentX
-		newY = agentY - 1
-	elseif action == "u" then
-		newX = agentX + 1
-		newY = agentY + 1
-	elseif action == "l" then
-		newX = agentX + 1
-		newY = agentY
-	elseif action == "n" then
-		newX = agentX + 1
-		newY = agentY - 1
-	elseif action == "." then
+	if action[1] == "y" then
+		if action[2] == "monster" then
+			newX = agentX
+			newY = agentY
+		elseif(agentX - 1 == player[1][1] and agentY - 1 == player [1][2]) then
+			newX = agentX
+			newY = agentY
+		else
+			newX = agentX - 1
+			newY = agentY - 1
+		end
+	elseif action[1] == "h" then 
+		if action[2] == "monster" then
+			newX = agentX
+			newY = agentY
+		elseif(agentX - 1 == player[1][1] and agentY == player [1][2]) then
+			newX = agentX
+			newY = agentY
+		else 
+			newX = agentX - 1
+			newY = agentY
+		end
+	elseif action[1] == "b" then
+		if action[2] == "monster" then
+			newX = agentX
+			newY = agentY
+		elseif(agentX - 1 == player[1][1] and agentY + 1 == player [1][2]) then
+			newX = agentX
+			newY = agentY
+		else 
+			newX = agentX - 1
+			newY = agentY + 1
+		end
+	elseif action[1] == "j" then 
+		if action[2] == "monster" then
+			newX = agentX
+			newY = agentY
+		elseif(agentX == player[1][1] and agentY + 1 == player [1][2]) then
+			newX = agentX
+			newY = agentY
+		else 
+			newX = agentX
+			newY = agentY + 1
+		end
+	elseif action[1] == "k" then
+		if action[2] == "monster" then
+			newX = agentX
+			newY = agentY
+		elseif(agentX == player[1][1] and agentY - 1 == player [1][2]) then
+			newX = agentX
+			newY = agentY
+		else 
+			newX = agentX
+			newY = agentY - 1
+		end
+	elseif action[1] == "u" then
+		if action[2] == "monster" then
+			newX = agentX
+			newY = agentY
+		elseif(agentX + 1 == player[1][1] and agentY + 1 == player [1][2]) then
+			newX = agentX
+			newY = agentY
+		else 
+			newX = agentX + 1
+			newY = agentY + 1
+		end
+	elseif action[1] == "l" then
+		if action[2] == "monster" then
+			newX = agentX
+			newY = agentY
+		elseif(agentX + 1 == player[1][1] and agentY == player [1][2]) then
+			newX = agentX
+			newY = agentY
+		else 
+			newX = agentX + 1
+			newY = agentY
+		end
+	elseif action[1] == "n" then
+		if action[2] == "monster" then
+			newX = agentX
+			newY = agentY
+		elseif(agentX + 1 == player[1][1] and agentY - 1 == player [1][2]) then
+			newX = agentX
+			newY = agentY	
+		else 
+			newX = agentX + 1
+			newY = agentY - 1
+		end
+	elseif action[1] == "." then
 		newX = agentX
 		newY = agentY
 	else
