@@ -158,8 +158,11 @@ function getAction(agentIndex, gameState)
 	local actionScores = {}
 	local currentScore = 0
 	local legalActions = getLegalActions(agentIndex, gameState)
+	for key, a in pairs(legalActions) do 
+		crawl.mpr(a[1])
+	end
 	for key, action in pairs(legalActions) do
-		crawl.mpr("getting score for action " .. action[1])
+		--crawl.mpr("getting score for action " .. action[1])
 		currentScore = getScoreForAction(action, gameState)
 		-- penalize the "do nothing" action when we are adjacent to monsters
 		if action[1] == "." then
@@ -171,7 +174,7 @@ function getAction(agentIndex, gameState)
 		end
 			
 
-		crawl.mpr("that score is " .. currentScore)
+		--crawl.mpr("that score is " .. currentScore)
 
 		table.insert(actionScores, {action, currentScore})
 	end
@@ -196,17 +199,19 @@ function getAction(agentIndex, gameState)
 end
 
 function getScoreForAction(action, gameState) 
-	globalDepth = 0 -- can mess with this
-	return maxValue(generateSuccessor(gameState, 1, action), 0, 1, action)
+	globalDepth = 1 -- can mess with this
+	return maxValue(gameState, 0, 1, action)
 end
 
 function maxValue(gameState, depth, agentIndex, action)
 	--if isWinState(gameState) or isLoseState(gameState) or depth == globalDepth then
-	if depth == globalDepth then
+	if depth > globalDepth then
 		toreturn = scoreGameState(gameState, action)
 		--crawl.mpr("maxValue returning " .. toreturn .. " at max depth of " .. depth)
 		return toreturn --return scoreGameState(gameState)
 	end
+
+	crawl.mpr("in max value, depth is " .. depth)
 
 	local v = -10000
 	local potential = 0
@@ -224,11 +229,13 @@ end
 
 function minValue(gameState, depth, agentIndex, action)
 	--if isWinState(gameState) or isLoseState(gameState) or depth == globalDepth then
-	if depth == globalDepth then
+	if depth > globalDepth then
 		toreturn = scoreGameState(gameState, action)
 		--crawl.mpr("maxValue returning " .. toreturn .. " at max depth of " .. depth)
 		return toreturn --return scoreGameState(gameState)
 	end
+
+	crawl.mpr("in min value, depth is " .. depth)
 
 	local v = 10000
 	local potential = 0
@@ -347,7 +354,7 @@ function scoreGameState(gameState, action)
 	local attackScoreBonus = 0
 	if action[2] == "monster" then
 		attackScoreBonus = 10
-		crawl.mpr("ATTACK BONUS ACTIVE!!")
+		--crawl.mpr("ATTACK BONUS ACTIVE!!")
 	end
 	-- TODO: consider health, player and monster if possible
 	local toreturn = wallScore * 2 + monsterScore + lavaScore + waterScore + attackScoreBonus
@@ -562,6 +569,7 @@ function generateSuccessor(gameState, agentIndex, action)
 	newAgentList[agentIndex] = {{newX, newY}, gameState[6][agentIndex][2]}
 
 	local newGameState = {gameState[1], gameState[2], gameState[3], gameState[4], gameState[5], newAgentList}
+	crawl.mpr("after agentIndex " .. agentIndex .. "s move " .. action[1] .. " that agent is at position: " .. newX .. ", " .. newY)
 	return newGameState
 
 end
@@ -610,6 +618,7 @@ function main()
 	-- if we are not in combat, this code will determine our actions:
 	else
 		crawl.mpr("not in combat")
+		local current_hp,max_hp = you.hp()
 		local hunger = gameState[6][1][2][3]
 		crawl.mpr("your hunger level is ".. hunger)
 		if hunger < 4 then
@@ -633,6 +642,12 @@ function main()
 				crawl.sendkeys('e')
 				crawl.sendkeys(toEat)
 			end
+		elseif current_hp < max_hp then
+			--crawl.mpr(current_hp)
+			--crawl.mpr(max_hp)
+			--if current_hp < 0.3*max_hp then
+				--try_emergency()
+			crawl.sendkeys('5')
 		else
 			crawl.sendkeys('o')
 		end
