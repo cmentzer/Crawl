@@ -607,6 +607,39 @@ function manhattanDistance(x1, y1, x2, y2)
 	return math.abs(dX) + math.abs(dY)
 end
 
+function getClosestAgents(agentList)
+	local newAgentList ={}
+	local i = 0
+	for i = 1, getn(agentList) do 
+		local d = manhattanDistance(agentList[1][1][1], agentList[1][1][2], agentList[i][1][1], agentList[i][1][2])
+		table.insert(newAgentList, {i, d})
+	end
+	local smallest = 15
+	local smaller = 15
+	local small = 15
+	for key, value in newAgentList do 
+		if value[2] < small then
+			if value[2] < smaller then
+				if value[2] < smallest then
+					small = smaller
+					smaller = smallest
+					smallest = value
+				else
+					small = smaller
+					smaller = value
+				end
+			else 
+				small = value
+			end
+		end
+	end
+	local returnTable = {deepCopy(agentList[smallest[1]]), deepCopy(agentList[smaller[1]]), deepCopy(agentList[small[1]])}
+	return returnTable
+end
+
+
+
+
 function main()
 	-- Essentially we want to split the game state into two categories:
 	-- one is "combat", for which we score our gamestates based on things like
@@ -630,13 +663,23 @@ function main()
 	-- if we are in combat, this code will determine our actions:
 	if inCombat then
 		crawl.mpr("in combat !!!")
+
+		-- gamestate max agent tracks the number of enemies on the screen (plus 1, for the player)
 		gameStateMaxAgent = table.getn(gameState[6])
+		-- if there are more than 3 enemies on the screen AND we have depth set to 3, we are going to take
+		-- a significant hit to performance as we compute all possible combinations of moves for all agents. 
 		if gameStateMaxAgent > 3 then
+			-- instead, we will only consider the 3 closest agents if there are more than 3 agents on screen
+			local closestAgents = getClosestAgents(gameState[6])
+			gameState = {gameState[1], gameState[2], gameState[3], gameState[4], gameState[5], closestAgents, gameState[7]}
 			gameStateMaxAgent = 3
+
+			-- additionally, we can update global depth so that we "think" less when there are more enemies on screen
 			globalDepth = 1
 		else
 			globalDepth = 3
 		end
+
 		crawl.mpr("number of agents is" .. gameStateMaxAgent)
 		local toTake = getAction(gameState)
 		crawl.sendkeys(toTake)
@@ -677,8 +720,6 @@ function main()
 
 
 			crawl.sendkeys('o')
-			crawl.delay(100)
-
 		end
 	end
 end
