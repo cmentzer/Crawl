@@ -156,7 +156,7 @@ function get_game_state()
 	end
 
 	for key, value in pairs(monster_list) do 
-		crawl.mpr("There is a(n) " .. value [1] .. " at " .. value[2] .. ", " .. value[3])
+	--crawl.mpr("There is a(n) " .. value [1] .. " at " .. value[2] .. ", " .. value[3])
 	end 
 	for key, value in pairs(water_list) do
 	--	crawl.mpr("there is " .. value[1] .. " water at " .. value[2] .. value[3])
@@ -186,7 +186,7 @@ function getAction(gameState)
 	local currentScore = 0
 	local legalActions = getLegalActions(1, gameState)
 	for key, action in pairs(legalActions) do
-		crawl.mpr("getting score for action " .. action[1])
+	--	crawl.mpr("getting score for action " .. action[1])
 		currentScore = getScoreForAction(action, gameState)
 		-- penalize the "do nothing" action when we are adjacent to monsters
 		if action[1] == "." then
@@ -211,7 +211,7 @@ function getAction(gameState)
 			action = v[1]
 		end
 	end
-	crawl.mpr("returning action " .. action[1] .. " with value " .. maxScore)
+	--crawl.mpr("returning action " .. action[1] .. " with value " .. maxScore)
 	return action[1]
 end
 
@@ -223,11 +223,15 @@ end
 
 -- maximizing half of minimax
 function maxValue(gameState, depth, agentIndex, action)
+
+	crawl.mpr("number of iterations = ")
 	if depth > globalDepth then
 		toReturn = scoreGameState(gameState, agentIndex, action)
 		--crawl.mpr("maxValue returning " .. toreturn .. " at max depth of " .. depth)
 		return toReturn 
 	end
+
+	
 
 	--crawl.mpr("in max value, depth is " .. depth)
 
@@ -247,11 +251,14 @@ end
 
 -- minimizing half of minimax
 function minValue(gameState, depth, agentIndex, action)
+	crawl.mpr("number of iterations = ")
 	if depth > globalDepth then
 		toReturn = scoreGameState(gameState, agentIndex, action)
 		--crawl.mpr("maxValue returning " .. toreturn .. " at max depth of " .. depth)
 		return toReturn
 	end
+
+	
 
 	--crawl.mpr("minvalue called, gamestate has player position as " .. gameState[6][1][1][1] .. ", " .. gameState[6][1][1][2])
 	--crawl.mpr("and " .. agentIndex .. " position as " .. gameState[6][2][1][1] .. ", " .. gameState[6][2][1][2])
@@ -376,7 +383,7 @@ function scoreGameState(gameState, agentIndex, action)
 	local attackScoreBonus = 0
 	if action[2] == "monster" and agentIndex == 1 then
 		attackScoreBonus = 20
-		crawl.mpr("ATTACK BONUS ACTIVE for key: " .. action[1])
+	--	crawl.mpr("ATTACK BONUS ACTIVE for key: " .. action[1])
 	end
 
 	local toReturn = wallScore * 3 + monsterScore + lavaScore + waterScore + attackScoreBonus
@@ -610,17 +617,17 @@ end
 function getClosestAgents(agentList)
 	local newAgentList ={}
 	local i = 0
-	for i = 1, getn(agentList) do 
+	for i = 1, table.getn(agentList) do 
 		local d = manhattanDistance(agentList[1][1][1], agentList[1][1][2], agentList[i][1][1], agentList[i][1][2])
 		table.insert(newAgentList, {i, d})
 	end
-	local smallest = 15
-	local smaller = 15
-	local small = 15
-	for key, value in newAgentList do 
-		if value[2] < small then
-			if value[2] < smaller then
-				if value[2] < smallest then
+	local smallest = {0, 15}
+	local smaller = {0, 15}
+	local small = {0, 15}
+	for key, value in pairs(newAgentList) do 
+		if value[2] < small[2] then
+			if value[2] < smaller[2] then
+				if value[2] < smallest[2] then
 					small = smaller
 					smaller = smallest
 					smallest = value
@@ -668,7 +675,7 @@ function main()
 		gameStateMaxAgent = table.getn(gameState[6])
 		-- if there are more than 3 enemies on the screen AND we have depth set to 3, we are going to take
 		-- a significant hit to performance as we compute all possible combinations of moves for all agents. 
-		if gameStateMaxAgent > 3 then
+		if gameStateMaxAgent > 2 then
 			-- instead, we will only consider the 3 closest agents if there are more than 3 agents on screen
 			local closestAgents = getClosestAgents(gameState[6])
 			gameState = {gameState[1], gameState[2], gameState[3], gameState[4], gameState[5], closestAgents, gameState[7]}
@@ -680,7 +687,7 @@ function main()
 			globalDepth = 3
 		end
 
-		crawl.mpr("number of agents is" .. gameStateMaxAgent)
+		--crawl.mpr("number of agents is" .. gameStateMaxAgent)
 		local toTake = getAction(gameState)
 		crawl.sendkeys(toTake)
 	-- if we are not in combat, this code will determine our actions:
@@ -711,10 +718,6 @@ function main()
 				crawl.sendkeys(toEat)
 			end
 		elseif current_hp < max_hp then
-			--crawl.mpr(current_hp)
-			--crawl.mpr(max_hp)
-			--if current_hp < 0.3*max_hp then
-				--try_emergency()
 			crawl.sendkeys('5')
 		else
 
